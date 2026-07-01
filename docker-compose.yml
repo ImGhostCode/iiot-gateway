@@ -1,0 +1,70 @@
+version: "3.8"
+
+# ============================================================
+# IIoT Gateway Stack — Mosquitto (MQTT) + InfluxDB + Grafana
+# ============================================================
+
+services:
+
+  # ---------- MQTT Broker ----------
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: iiot-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT
+      - "9001:9001"   # MQTT over WebSocket
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config
+      - ./docker/mosquitto/data:/mosquitto/data
+      - ./docker/mosquitto/log:/mosquitto/log
+    networks:
+      - iiot-net
+
+  # ---------- Time-series Database ----------
+  influxdb:
+    image: influxdb:2.7
+    container_name: iiot-influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:-iiot12345678}
+      DOCKER_INFLUXDB_INIT_ORG: iiot-org
+      DOCKER_INFLUXDB_INIT_BUCKET: gateway-data
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-my-super-secret-admin-token}
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    networks:
+      - iiot-net
+
+  # ---------- Dashboard ----------
+  grafana:
+    image: grafana/grafana-oss:11.0.0
+    container_name: iiot-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+    networks:
+      - iiot-net
+
+networks:
+  iiot-net:
+    driver: bridge
+
+volumes:
+  influxdb-data:
+  influxdb-config:
+  grafana-data:

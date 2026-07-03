@@ -4,8 +4,11 @@ import sys
 import time
 import os
 
+import paho.mqtt.client as mqtt
+
 from gateway.config.settings import config
 from gateway.core.influx_writer import InfluxWriter
+from gateway.core.rule_engine import RuleEngine
 from gateway.drivers.mqtt_driver import MQTTDriver
 from gateway.drivers.modbus_driver import ModbusDriver
 from gateway.drivers.serial_driver import SerialDriver
@@ -20,12 +23,29 @@ class Gateway:
     def __init__(self):
         self._writer = InfluxWriter()
 
+        self._alert_client = mqtt.Client(
+            mqtt.CallbackAPIVersion.VERSION2,
+            client_id="iiot_gateway_alert"
+        )
+        self._alert_client.connect(
+            config.mqtt.broker_host,
+            int(config.mqtt.broker_port)
+        )
+        self._alert_client.loop_start()
+
+        self._rule_engine = RuleEngine(
+            rules_path=config.rules_path,
+            mqtt_client=self._alert_client
+        )
+
+        def _on_data(point):
+            self._rule_engine.evaluate(point)
+            self._writer.write(point)
+
         self._drivers = [
-            MQTTDriver(on_data=self._writer.write),
+            MQTTDriver(on_data=_on_data),
         ]
-        print(os.getenv("MODBUS_ENABLED", "false"))
-        print(os.getenv("SERIAL_ENABLED", "false"))
-        
+
         if config.modbus.enabled:
             self._drivers.append(ModbusDriver(on_data=self._writer.write))
         else:
@@ -49,6 +69,8 @@ class Gateway:
         for driver in self._drivers:
             driver.stop()
         self._writer.close()
+        self._alert_client.loop_stop()
+        self._alert_client.disconnect()
         self._running = False
         logger.info("Gateway stopped completely.")
     

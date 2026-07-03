@@ -1,0 +1,103 @@
+# ============================================================
+# Rule Engine Configuration
+# Add/edit/delete rules here, no need to modify Python code.
+# Gateway reloads automatically on startup.
+#
+# Rule structure:
+#   name        : descriptive name (shown in logs and alert payload)
+#   device_id   : specific device ID, or "*" to apply to all devices
+#   measurement : field name corresponding to the payload sent by the device
+#   condition   : >, >=, <, <=, ==, !=
+#   threshold   : threshold value (real number)
+#   severity    : "warning" or "critical"
+#   cooldown_sec: minimum waiting time between two alerts (seconds)
+# 
+# Alerts are published to the MQTT topic:
+# iiot/alerts/<severity>/<device_id>
+# ============================================================
+
+rules:
+
+  # ---------- ESP32 — Factory sensor ----------
+  - name: "ESP32 temperature is too high"
+    device_id: "esp32-01"
+    measurement: "temperature"
+    condition: ">"
+    threshold: 35.0
+    severity: "warning"
+    cooldown_sec: 60
+  
+  - name: "ESP32 temperature is dangerous"
+    device_id: "esp32-01"
+    measurement: "temperature"
+    condition: ">"
+    threshold: 40.0
+    severity: "critical"
+    cooldown_sec: 30
+
+  - name: "ESP32 humidity is too low"
+    device_id: "esp32-01"
+    measurement: "humidity"
+    condition: "<"
+    threshold: 30.0
+    severity: "warning"
+    cooldown_sec: 120
+
+  # ---------- STM32 — Simulate PLC ----------
+  - name: "Abnormal engine speed"
+    device_id: "stm32-plc-01"
+    measurement: "motor_rpm"
+    condition: ">"
+    threshold: 1580
+    severity: "warning"
+    cooldown_sec: 30
+
+  - name: "Motor temperature is dangerous"
+    device_id: "stm32-plc-01"
+    measurement: "motor_temp"
+    condition: ">"
+    threshold: 72
+    severity: "critical"
+    cooldown_sec: 15
+
+  - name: "Pressure is too high"
+    device_id: "stm32-plc-01"
+    measurement: "pressure"
+    condition: ">="
+    threshold: 335
+    severity: "critical"
+    cooldown_sec: 10
+
+  # ---------- Arduino — Environment Sensor ----------
+  - name: "Gas detected"
+    device_id: "arduino-env-01"
+    measurement: "gas"
+    condition: ">"
+    threshold: 130
+    severity: "critical"
+    cooldown_sec: 20
+
+  - name: "Dry soil - Needs watering"
+    device_id: "arduino-env-01"
+    measurement: "soil_moisture"
+    condition: "<"
+    threshold: 35.0
+    severity: "warning"
+    cooldown_sec: 300
+
+  - name: "Low water level"
+    device_id: "arduino-env-01"
+    measurement: "water_level"
+    condition: "<"
+    threshold: 8.0
+    severity: "warning"
+    cooldown_sec: 180
+
+  # ---------- Rule for all devices ----------
+  - name: "Abnormal negative value (all RPM)"
+    device_id: "*"
+    measurement: "motor_rpm"
+    condition: "<"
+    threshold: 0
+    severity: "critical"
+    cooldown_sec: 5

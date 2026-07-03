@@ -50,6 +50,7 @@ class GatewatConfig:
     modbus: ModbusConfig = field(default_factory=ModbusConfig)
     serial: SerialConfig = field(default_factory=SerialConfig)
     infuxdb: InfluxDBConfig = field(default_factory=InfluxDBConfig)
+    rules_path: str = os.getenv("RULES_PATH", "config/rules.yaml")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
 
 config = GatewatConfig()

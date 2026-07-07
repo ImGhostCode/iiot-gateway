@@ -31,7 +31,7 @@ class Rule:
     severity: Serverity = "warning"
     device_id: str = "*"
     cooldown_sec: float = 60
-    _last_tringgered: float = field(default=0.0, init=False, repr=False)
+    _last_triggered: float = field(default=0.0, init=False, repr=False)
 
     def matches(self, point: DataPoint) -> bool:
         if self.device_id != "*" and self.device_id != point.device_id:
@@ -46,17 +46,19 @@ class Rule:
         return fn(point.value, self.threshold)
     
     def is_cooled_down(self)-> bool:
-        return (time.monotonic() - self._last_tringgered) >= self.cooldown_sec
+        return (time.monotonic() - self._last_triggered) >= self.cooldown_sec
     
     def mark_triggered(self) ->None:
-        self._last_tringgered = time.monotonic()
+        self._last_triggered = time.monotonic()
+
 
 class RuleEngine:
     ALERT_TOPIC = "iiot/alerts"
 
-    def __init__(self, rules_path: str, mqtt_client: mqtt.Client):
+    def __init__(self, rules_path: str, mqtt_client: mqtt.Client, alert_store: None):
         self._rules: list[Rule] = []
         self._mqtt = mqtt_client
+        self._alert_store = alert_store
         self._load_rules(rules_path)
 
     def _load_rules(self, path: str) -> None:
@@ -105,6 +107,18 @@ class RuleEngine:
 
         topic = f"{self.ALERT_TOPIC}/{rule.severity}/{point.device_id}"
         self._mqtt.publish(topic, payload, qos=1)
+
+        if self._alert_store is not None:
+            from gateway.core.store import AlertRecord
+            self._alert_store.add(AlertRecord(
+                rule_name=rule.name,
+                severity=rule.severity,
+                device_id=point.device_id,
+                measurement=point.measurement,
+                value=point.value,
+                threshold=rule.threshold,
+                condition=rule.condition
+            ))
 
         if rule.severity == "critical":
             logger.critical(

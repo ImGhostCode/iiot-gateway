@@ -51,6 +51,8 @@ class GatewatConfig:
     serial: SerialConfig = field(default_factory=SerialConfig)
     infuxdb: InfluxDBConfig = field(default_factory=InfluxDBConfig)
     rules_path: str = os.getenv("RULES_PATH", "config/rules.yaml")
+    api_host: str = os.getenv("API_HOST", "0.0.0.0")
+    api_port: int = int(os.getenv("API_PORT", "8000"))
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
 
 config = GatewatConfig()

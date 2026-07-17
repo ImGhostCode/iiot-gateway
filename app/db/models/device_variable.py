@@ -1,7 +1,9 @@
-from sqlalchemy import (
-    ForeignKey, 
-    String
-)
+# app/db/models/device_variable.py
+
+from sqlalchemy import Boolean
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -14,17 +16,33 @@ class DeviceVariable(Base, BaseEntity):
 
     __tablename__ = "device_variables"
 
+    name: Mapped[str]
+
+    description: Mapped[str | None]
+
+    method: Mapped[str]
+
+    device_address: Mapped[str]
+
+    data_type: Mapped[str]
+
+    is_trigger: Mapped[bool]
+
+    endian_type: Mapped[str]
+
+    expressions: Mapped[str | None]
+
+    is_upload: Mapped[bool]
+
+    protect_type: Mapped[str]
+
+    index: Mapped[int] = mapped_column(Integer)
+
+    alias: Mapped[str | None]
+
     device_id: Mapped[int] = mapped_column(
         ForeignKey("devices.id")
     )
-
-    name: Mapped[str] = mapped_column(String(100))
-    
-    address: Mapped[str] = mapped_column(String(50))
-
-    data_type: Mapped[str] = mapped_column(String(30))
-
-    value: Mapped[str | None]
 
     device = relationship(
         "Device",

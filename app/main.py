@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.core.config import settings
-from app.gateway.runtime import lifespan
+from app.gateway.runtime_function import lifespan
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)

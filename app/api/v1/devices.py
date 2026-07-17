@@ -27,3 +27,20 @@ async def create_device(
     service = DeviceService(DeviceRepository(db))
     device = Device(**dto.model_dump())
     return await service.create(device)
+
+
+# from fastapi import APIRouter
+# from fastapi import Depends
+
+# from app.gateway.runtime import runtime
+
+# router = APIRouter()
+
+
+# @router.get("/{device_id}")
+
+# async def get_runtime(device_id: int):
+
+#     return runtime.polling.cache.get_device(
+#         device_id
+#     )

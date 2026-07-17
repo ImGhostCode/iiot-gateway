@@ -1,24 +1,34 @@
+from pymodbus.client import AsyncModbusTcpClient
+
+from app.plugins.device_context import DeviceContext
 from app.plugins.base_driver import BaseDriver
 
 class ModbusDriver(BaseDriver):
 
-    async def connect(self):
-        print(
-            f"Connect {self.device.name}"
+    async def initialize(self):
+        ctx = DeviceContext(self.device)
+        self.host = ctx.require("IP")
+        self.port = int(
+            ctx.get("Port", 502)
         )
+        self.slave = int(
+            ctx.get("SlaveId", 1)
+        )
+
+    async def connect(self):
+        self.client = AsyncModbusTcpClient(
+            self.host,
+            port=self.port
+        )
+
+        self.connected = await self.client.connect()
 
     async def disconnect(self):
-        print(
-            f"Disconnect {self.device.name}"
-        )
+        if self.connected:
+            self.client.close()
 
     async def read(self):
-        print(
-            f"Reading {self.device.name}"
-        )
+        print(self.device.device_name)
 
     async def write(self, variable, value):
-        print(
-            variable,
-            value,
-        )
+        pass

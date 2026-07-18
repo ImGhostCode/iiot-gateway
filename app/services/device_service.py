@@ -2,8 +2,8 @@ from app.db.models.device import Device
 from app.repositories.device_repository import DeviceRepository
 
 class DeviceService:
-    def __init__(self, repositoty: DeviceRepository):
-        self.repository = self.repository
+    def __init__(self, repository: DeviceRepository):
+        self.repository = repository
 
     async def get_all(self):
         return await self.repository.get_all()

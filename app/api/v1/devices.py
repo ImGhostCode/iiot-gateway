@@ -9,6 +9,7 @@ from app.repositories.device_repository import DeviceRepository
 from app.schemas.device import DeviceCreate
 from app.services.device_service import DeviceService
 from app.db.models.device import Device
+from app.gateway.device_manager import DeviceManager
 
 router = APIRouter()
 
@@ -29,13 +30,19 @@ async def create_device(
     return await service.create(device)
 
 
-# from fastapi import APIRouter
-# from fastapi import Depends
-
-# from app.gateway.runtime import runtime
-
-# router = APIRouter()
-
+@router.get("/runtime")
+async def runtime_status(manager: DeviceManager):
+    return [
+        {
+            "id": runtime.device.id,
+            "name": runtime.device.device_name,
+            "connected": runtime.connected,
+            "reads": runtime.statistics.read_count,
+            "errors": runtime.statistics.error_count,
+            "last_poll": runtime.statistics.last_poll,
+        }
+        for runtime in manager.devices.values()
+    ]
 
 # @router.get("/{device_id}")
 

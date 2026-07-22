@@ -1,35 +1,25 @@
-# app/db/models/device_config.py
+import uuid
+from typing import Optional
 
-from sqlalchemy import ForeignKey
-from sqlalchemy import String
+from sqlalchemy import (
+    Enum as SqlEnum,
+    ForeignKey,
+    String
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
-
-from app.db.base import Base
-from app.db.models.base import BaseEntity
+from app.db.models.base import BasePoco, DataSide
+from app.db.models.device import Device
 
 
-class DeviceConfig(Base, BaseEntity):
-
+class DeviceConfig(BasePoco):
     __tablename__ = "device_configs"
 
-    device_config_name: Mapped[str]
+    device_config_name: Mapped[str] = mapped_column(String, index=True, comment="Name")
+    data_side: Mapped[DataSide] = mapped_column(SqlEnum(DataSide), comment="Attribute side")
+    description: Mapped[str] = mapped_column(String, comment="Description")
+    value: Mapped[str] = mapped_column(String, index=True, comment="Value")
+    enum_info: Mapped[str] = mapped_column(String, comment="Remark")
 
-    data_side: Mapped[int]
-
-    description: Mapped[str | None]
-
-    value: Mapped[str | None]
-
-    enum_info: Mapped[str | None]
-
-    device_id: Mapped[int] = mapped_column(
-        ForeignKey("devices.id")
-    )
-
-    device = relationship(
-        "Device",
-        back_populates="configs",
-    )
+    device_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("devices.id"), comment="Equipment")
+    device: Mapped[Optional["Device"]] = relationship(back_populates="device_configs")

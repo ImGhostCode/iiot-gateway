@@ -30,9 +30,8 @@ class DeviceManager:
         for device in devices:
             await self.add(device)
         logger.info(
-            "Initialized %d devices",
-            len(self.devices)
-            )
+            f"Initialized {len(self.devices)} devices"
+        )
 
     # async def add(self, device):
     #     driver = DriverFactory.create(device)

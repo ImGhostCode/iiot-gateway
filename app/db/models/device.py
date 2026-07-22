@@ -1,61 +1,50 @@
-from enum import Enum
+import uuid
+from typing import List, Optional
+from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Boolean, 
+    Boolean,
+    DateTime,
     Enum as SqlEnum,
     ForeignKey,
-    String,
-    Integer
+    Integer,
+    String
 )
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
+from app.db.models.base import BasePoco, DeviceTypeEnum
+from app.db.models.device import Device
+from app.db.models.driver import Driver
+from app.db.models.device_config import DeviceConfig
+from app.db.models.device_variable import DeviceVariable
 
-from app.db.base import Base
-from app.db.models.base import BaseEntity
-
-class DeviceTypeEnum(str, Enum):
-    GROUP = "Group"
-    DEVICE = "Device"
-
-class Device(Base, BaseEntity):
-
+class Device(BasePoco):
     __tablename__ = "devices"
 
-    device_name: Mapped[str] = mapped_column(String(100), index=True)
-
-    index: Mapped[int] = mapped_column(Integer)
-
-    description: Mapped[str | None]
+    device_name: Mapped[str] = mapped_column(String, index=True, comment="Device name")
+    index: Mapped[int] = mapped_column(Integer, comment="Sort")
+    description: Mapped[str] = mapped_column(String, comment="Description")
     
-    protocol: Mapped[str] = mapped_column(String(50))
+    driver_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("drivers.id"), comment="Driver")
+    driver: Mapped[Optional["Driver"]] = relationship(back_populates="devices")
 
-    driver_id: Mapped[int] = mapped_column(ForeignKey("drivers.id"))
-
-    auto_start: Mapped[bool] = mapped_column(Boolean,default=True)
-
-    cg_upload: Mapped[bool] = mapped_column(Boolean,default=True)
-
-    enforce_period: Mapped[int] = mapped_column(Integer,default=1000)
-
-    cmd_period: Mapped[int] = mapped_column(Integer,default=100)
-
-    device_type: Mapped[DeviceTypeEnum] = mapped_column(SqlEnum(DeviceTypeEnum))
-
-    driver = relationship(
-        "Driver",
-        back_populates="devices"
+    auto_start: Mapped[bool] = mapped_column(Boolean, index=True, comment="Start up")
+    cg_upload: Mapped[bool] = mapped_column(Boolean, comment="Changes uploaded")
+    enforce_period: Mapped[int] = mapped_column(Integer, comment="Archiving cycle ms")
+    cmd_period: Mapped[int] = mapped_column(Integer, comment="Instruction interval ms")
+    device_type_enum: Mapped[DeviceTypeEnum] = mapped_column(
+        SqlEnum(DeviceTypeEnum), index=True, comment="Type (group or device)"
     )
 
-    configs = relationship(
-        "DeviceConfig",
-        back_populates="device",
-        cascade="all, delete-orphan"
-    )
+    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    create_by: Mapped[Optional[str]] = mapped_column(String)
+    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    update_by: Mapped[Optional[str]] = mapped_column(String)
 
-    variables = relationship(
-        "DeviceVariable",
-        back_populates="device",
-        cascade="all, delete-orphan"
-    )
+    parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("devices.id"))
+    children: Mapped[List["Device"]] = relationship(back_populates="parent")
+    parent: Mapped[Optional["Device"]] = relationship(back_populates="children", remote_side="Device.id")
+
+    # Relationships
+    device_configs: Mapped[List["DeviceConfig"]] = relationship(back_populates="device")
+    device_variables: Mapped[List["DeviceVariable"]] = relationship(back_populates="device")

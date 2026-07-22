@@ -1,36 +1,15 @@
-from sqlalchemy import String
-from sqlalchemy import Boolean
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Enum as SqlEnum
+from typing import Optional
 
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
+from app.db.models.base import BasePoco, GenderEnum
 
-from app.db.base import Base
-from app.db.mixins import TimestampMixin
-
-class User(Base, TimestampMixin):
-
+class User(BasePoco):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-
-    username: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
-        index=True
-    )
-
-    password_hash: Mapped[str] = mapped_column(
-        String(255),
-    )
-
-    is_admin: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False
-    )
-    
-    enabled: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True
-    )
-
-
+    email: Mapped[str] = mapped_column(String(50))
+    gender: Mapped[Optional[GenderEnum]] = mapped_column(SqlEnum(GenderEnum))
+    cell_phone: Mapped[str] = mapped_column(String)
+    home_phone: Mapped[str] = mapped_column(String(30))
+    address: Mapped[str] = mapped_column(String(200))
+    zip_code: Mapped[str] = mapped_column(String)

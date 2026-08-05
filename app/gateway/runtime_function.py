@@ -41,13 +41,20 @@ async def lifespan(app: FastAPI):
         device_service = DeviceService(DeviceRepository(db=session))
         device_manager = DeviceManager(bus,device_service)
         polling_engine = PollingEngine(device_manager)
+
+        app.state.device_manager = device_manager
+        app.state.polling_engine = polling_engine
+        app.state.bus = bus
+        app.state.driver_factory = driver_factory
+        app.state.plugin_manager = plugin_manager
+        
         logger.info("Starting IoT Gateway...")
 
         plugin_manager.initialize()
 
-        await device_manager.initialize()
+        # await device_manager.initialize()
 
-        await polling_engine.start()
+        # await polling_engine.start()
 
         logger.info("Gateway started.")
 
@@ -55,9 +62,9 @@ async def lifespan(app: FastAPI):
 
         logger.info("Stoping IoT Gateway...")
 
-        await polling_engine.stop()
+        # await polling_engine.stop()
 
-        await device_manager.shutdown()
+        # await device_manager.shutdown()
 
 
 

@@ -6,7 +6,7 @@ from sqlalchemy import pool
 
 from alembic import context
 import asyncio
-from app.db.base import Base
+from app.db.models.base import Base
 from app.db import models
 from app.core.config import settings
 

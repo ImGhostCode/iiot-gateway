@@ -27,16 +27,16 @@ class IoTPlatformType(int, Enum):
     ThingsPanel = 9
 
 class DeviceTypeEnum(int, Enum):
-    Group = 0 #[cite: 8]
-    Device = 1 #[cite: 8]
+    Group = 0
+    Device = 1
 
 class AccessEnum(int, Enum):
-    ReadOnly = 0 #[cite: 8]
-    ReadAndWrite = 1 #[cite: 8]
+    ReadOnly = 0
+    ReadAndWrite = 1
 
 class DataSide(int, Enum):
-    AnySide = 0 #[cite: 8]
-    ClientSide = 2 #[cite: 8]
+    AnySide = 0
+    ClientSide = 2
 
 # Placeholders for enums referenced but not fully defined in the provided code
 class ProtectTypeEnum(str, Enum):
@@ -64,12 +64,12 @@ class BaseEntity:
     id: Mapped[int] = mapped_column(primary_key=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=datetime.now(timezone.utc),
     )
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=datetime.now(timezone.utc),
         onupdate=datetime.now(timezone.utc),
     )

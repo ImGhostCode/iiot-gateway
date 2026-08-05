@@ -11,7 +11,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.models.base import BasePoco, DataTypeEnum, EndianEnum, ProtectTypeEnum
-from app.db.models.device import Device
 
 class DeviceVariable(BasePoco):
     __tablename__ = "device_variables"

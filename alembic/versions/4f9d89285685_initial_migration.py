@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: b605b98b25f4
+Revision ID: 4f9d89285685
 Revises: 
-Create Date: 2026-07-23 07:46:33.797119
+Create Date: 2026-08-06 13:17:47.881713
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b605b98b25f4'
+revision: str = '4f9d89285685'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,6 +26,10 @@ def upgrade() -> None:
     sa.Column('file_name', sa.String(), nullable=False, comment='File name'),
     sa.Column('assemble_name', sa.String(), nullable=False, comment='Folder name'),
     sa.Column('authorizes_num', sa.Integer(), nullable=False, comment='Remaining number of authorizations'),
+    sa.Column('create_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('create_by', sa.String(length=50), nullable=True),
+    sa.Column('update_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('update_by', sa.String(length=50), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
@@ -37,19 +41,31 @@ def upgrade() -> None:
     sa.Column('mqtt_uname', sa.String(), nullable=False, comment='Mqtt username'),
     sa.Column('mqtt_upwd', sa.String(), nullable=False, comment='Mqtt user password'),
     sa.Column('iot_platform_type', sa.Enum('ThingsBoard', 'IoTSharp', 'AliCloudIoT', 'TencentIoTHub', 'BaiduIoTCore', 'OneNET', 'ThingsCloud', 'HuaWei', 'IoTGateway', 'ThingsPanel', name='iotplatformtype'), nullable=False, comment='Platform ouput'),
+    sa.Column('create_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('create_by', sa.String(length=50), nullable=True),
+    sa.Column('update_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('update_by', sa.String(length=50), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
-    sa.Column('email', sa.String(length=50), nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.Column('email', sa.String(length=100), nullable=False),
+    sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.Column('role', sa.Enum('ADMIN', 'OPERATOR', 'VIEWER', name='userrole'), nullable=False),
     sa.Column('gender', sa.Enum('Male', 'Female', name='genderenum'), nullable=True),
-    sa.Column('cell_phone', sa.String(), nullable=False),
-    sa.Column('home_phone', sa.String(length=30), nullable=False),
-    sa.Column('address', sa.String(length=200), nullable=False),
-    sa.Column('zip_code', sa.String(), nullable=False),
+    sa.Column('cell_phone', sa.String(length=30), nullable=True),
+    sa.Column('address', sa.String(length=200), nullable=True),
+    sa.Column('zip_code', sa.String(length=20), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('create_time', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('create_by', sa.String(length=50), nullable=True),
+    sa.Column('update_time', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('update_by', sa.String(length=50), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_table('devices',
     sa.Column('device_name', sa.String(), nullable=False, comment='Device name'),
     sa.Column('index', sa.Integer(), nullable=False, comment='Sort'),
@@ -60,10 +76,10 @@ def upgrade() -> None:
     sa.Column('enforce_period', sa.Integer(), nullable=False, comment='Polling cycle ms'),
     sa.Column('cmd_period', sa.Integer(), nullable=False, comment='Instruction interval ms'),
     sa.Column('device_type_enum', sa.Enum('Group', 'Device', name='devicetypeenum'), nullable=False, comment='Type (group or device)'),
-    sa.Column('create_time', sa.DateTime(), nullable=True),
-    sa.Column('create_by', sa.String(), nullable=True),
-    sa.Column('update_time', sa.DateTime(), nullable=True),
-    sa.Column('update_by', sa.String(), nullable=True),
+    sa.Column('create_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('create_by', sa.String(length=50), nullable=True),
+    sa.Column('update_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('update_by', sa.String(length=50), nullable=True),
     sa.Column('parent_id', sa.Uuid(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['driver_id'], ['drivers.id'], ),
@@ -79,6 +95,10 @@ def upgrade() -> None:
     sa.Column('description', sa.String(), nullable=False, comment='Description'),
     sa.Column('value', sa.String(), nullable=False, comment='Value'),
     sa.Column('enum_info', sa.String(), nullable=False, comment='Remark'),
+    sa.Column('create_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('create_by', sa.String(length=50), nullable=True),
+    sa.Column('update_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('update_by', sa.String(length=50), nullable=True),
     sa.Column('device_id', sa.Uuid(), nullable=True, comment='Equipment'),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['device_id'], ['devices.id'], ),
@@ -126,6 +146,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_devices_device_name'), table_name='devices')
     op.drop_index(op.f('ix_devices_auto_start'), table_name='devices')
     op.drop_table('devices')
+    op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
     op.drop_table('system_configs')
     op.drop_table('drivers')

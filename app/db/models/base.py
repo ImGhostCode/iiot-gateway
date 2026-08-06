@@ -52,6 +52,11 @@ class GenderEnum(str, Enum):
     Male = "Male"
     Female = "Female"
 
+class UserRole(str, Enum):
+    ADMIN = "ADMIN"
+    OPERATOR = "OPERATOR"
+    VIEWER = "VIEWER"
+
 class Base(DeclarativeBase):
     pass
 

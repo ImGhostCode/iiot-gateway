@@ -1,15 +1,16 @@
-from abc import ABC
 from .info import PluginInfo
+
+
 class PluginBase:
 
     info: PluginInfo
     driver: type
 
     async def startup(self):
-        """Called when gateway starts."""
+        pass
 
     async def shutdown(self):
-        """Called when gateway stops."""
+        pass
 
     async def health(self):
-        """Optional health check."""
+        return True

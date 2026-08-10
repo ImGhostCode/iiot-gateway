@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 @dataclass(slots=True)
 class TagChangedEvent:
 
-    device_id: int
+    device_id: str
 
-    variable_id: int
+    variable_id: str
 
     old_value: object
 

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 @dataclass(slots=True)
 class RuntimeVariable:
 
-    id: int
+    id: str
 
     name: str
 

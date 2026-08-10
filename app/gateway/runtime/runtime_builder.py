@@ -1,23 +1,32 @@
-from app.gateway.runtime.runtime_device import RuntimeDevice
-from app.gateway.runtime.runtime_variable import RuntimeVariable
+from app.gateway.runtime.runtime_device import (
+    RuntimeDevice,
+)
+from app.gateway.runtime.runtime_variable import (
+    RuntimeVariable,
+)
 
 
 class RuntimeBuilder:
 
     @staticmethod
-    def build(device, driver):
+    def build(
+        device,
+        driver,
+    ) -> RuntimeDevice:
 
         runtime = RuntimeDevice(
-           device= device,
-           driver= driver,
+            device=device,
+            driver=driver,
         )
 
-        for variable in device.variables:
+        for variable in (
+            device.device_variables
+        ):
 
             runtime.variables[
-                variable.id
+                str(variable.id)
             ] = RuntimeVariable(
-                id=variable.id,
+                id=str(variable.id),
                 name=variable.name,
             )
 

@@ -2,69 +2,189 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.gateway.device_manager import DeviceManager
-from app.gateway.polling_engine import PollingEngine
-from app.gateway.event_bus import EventBus
-from app.gateway.event import TagChangedEvent
-from app.services.alarm_service import AlarmService
-from app.services.history_service import HistoryService
-from app.services.device_service import DeviceService
-from app.repositories.device_repository import DeviceRepository
-from app.services.mqtt_service import MQTTService
-from app.services.ws_service import WebSocketService
-from app.plugins.manager import PluginManager
-from app.gateway.driver_factory import DriverFactory
-from app.db.session import get_db
+from app.gateway.device_manager import (
+    DeviceManager,
+)
+
+from app.gateway.polling_engine import (
+    PollingEngine,
+)
+
+from app.gateway.event_bus import (
+    EventBus,
+)
+
+from app.gateway.event import (
+    TagChangedEvent,
+)
+
+from app.services.alarm_service import (
+    AlarmService,
+)
+
+from app.services.history_service import (
+    HistoryService,
+)
+
+from app.services.mqtt_service import (
+    MQTTService,
+)
+
+from app.services.ws_service import (
+    WebSocketService,
+)
+
+from app.plugins.manager import (
+    PluginManager,
+)
+
+from app.gateway.driver_factory import (
+    DriverFactory,
+)
+
+from app.db.session import (
+    SessionLocal,
+)
+
+from app.repositories.device_repository import (
+    DeviceRepository,
+)
+
+from app.services.device_service import (
+    DeviceService,
+)
+
+from app.repositories.plugin_repository import (
+    PluginRepository,
+)
+
 from app.core.logger import logger
-from app.db.session import SessionLocal
+
 
 bus = EventBus()
+
 alarm = AlarmService()
 history = HistoryService()
 mqtt = MQTTService()
 ws = WebSocketService()
 
 
-bus.subscribe(TagChangedEvent, alarm.on_tag_changed)
-bus.subscribe(TagChangedEvent, history.on_tag_changed)
-bus.subscribe(TagChangedEvent, mqtt.on_tag_changed)
-bus.subscribe(TagChangedEvent, ws.on_tag_changed)
+bus.subscribe(
+    TagChangedEvent,
+    alarm.on_tag_changed,
+)
+
+bus.subscribe(
+    TagChangedEvent,
+    history.on_tag_changed,
+)
+
+bus.subscribe(
+    TagChangedEvent,
+    mqtt.on_tag_changed,
+)
+
+bus.subscribe(
+    TagChangedEvent,
+    ws.on_tag_changed,
+)
+
 
 plugin_manager = PluginManager()
+
 driver_factory = DriverFactory(
     plugin_manager
 )
 
+
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(
+    app: FastAPI,
+):
+
+    logger.info(
+        "Starting IoT Gateway..."
+    )
+
+    # -----------------------------------------------------
+    # Load plugins
+    # -----------------------------------------------------
+
+    plugin_manager.initialize()
+
+    # -----------------------------------------------------
+    # Runtime services
+    # -----------------------------------------------------
+
+    device_manager = DeviceManager(
+        bus=bus,
+        driver_factory=driver_factory,
+    )
+
+    polling_engine = PollingEngine(
+        device_manager
+    )
+
+    app.state.device_manager = (
+        device_manager
+    )
+
+    app.state.polling_engine = (
+        polling_engine
+    )
+
+    app.state.bus = bus
+
+    app.state.driver_factory = (
+        driver_factory
+    )
+
+    app.state.plugin_manager = (
+        plugin_manager
+    )
+
+    # -----------------------------------------------------
+    # Load devices
+    # -----------------------------------------------------
+
     async with SessionLocal() as session:
-        device_service = DeviceService(DeviceRepository(db=session))
-        device_manager = DeviceManager(bus,device_service)
-        polling_engine = PollingEngine(device_manager)
 
-        app.state.device_manager = device_manager
-        app.state.polling_engine = polling_engine
-        app.state.bus = bus
-        app.state.driver_factory = driver_factory
-        app.state.plugin_manager = plugin_manager
-        
-        logger.info("Starting IoT Gateway...")
+        device_service = DeviceService(
 
-        plugin_manager.initialize()
+            repository=
+                DeviceRepository(session),
 
-        # await device_manager.initialize()
+            plugin_repository=
+                PluginRepository(session),
 
-        # await polling_engine.start()
+            plugin_manager=
+                plugin_manager,
+        )
 
-        logger.info("Gateway started.")
+        devices = (
+            await device_service.get_all()
+        )
+
+        await device_manager.initialize(
+            devices
+        )
+
+    logger.info(
+        "Gateway started."
+    )
+
+    try:
 
         yield
 
-        logger.info("Stoping IoT Gateway...")
+    finally:
 
-        # await polling_engine.stop()
+        logger.info(
+            "Stopping IoT Gateway..."
+        )
 
-        # await device_manager.shutdown()
+        await device_manager.shutdown()
 
-
-
+        logger.info(
+            "Gateway stopped."
+        )

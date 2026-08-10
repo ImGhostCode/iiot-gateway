@@ -22,7 +22,7 @@ class RuntimeDevice:
 
     polling: bool = False
 
-    variables: dict[int, RuntimeVariable] = field(default_factory=dict)
+    variables: dict[str, RuntimeVariable] = field(default_factory=dict)
 
     last_error: str | None = None
 

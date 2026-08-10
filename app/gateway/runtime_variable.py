@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 @dataclass
 class RuntimeVariable:
 
-    id: int
+    id: str
 
     name: str
 

@@ -2,78 +2,256 @@ import asyncio
 
 from app.core.logger import logger
 
-from app.gateway.driver_factory import DriverFactory
-from app.plugins.base_driver import BaseDriver
-from app.gateway.runtime.runtime_device import RuntimeDevice
-from app.gateway.runtime.runtime_builder import RuntimeBuilder
-from app.gateway.device_worker import DeviceWorker
-from app.services.device_service import DeviceService
+from app.gateway.driver_factory import (
+    DriverFactory,
+)
+
+from app.gateway.runtime.runtime_builder import (
+    RuntimeBuilder,
+)
+
+from app.gateway.runtime.runtime_device import (
+    RuntimeDevice,
+)
+
+from app.gateway.device_worker import (
+    DeviceWorker,
+)
+
 
 class DeviceManager:
 
-    def __init__(self, bus , device_service : DeviceService):
+    def __init__(
+        self,
+        bus,
+        driver_factory: DriverFactory,
+    ):
+
         self.bus = bus
-        self.device_service = device_service
-        # self.devices : dict[int, BaseDriver] = {}
-        # self.drivers = {}
-        self.devices: dict[int, RuntimeDevice] = {}
 
-    # async def load(self, devices):
-    #     for device in devices:
-    #         driver = await DriverFactory.create(device)
-    #         await driver.connect()
-    #         self.drivers[device.id] = driver
-
-    async def initialize(self):
-        logger.info("Loading devices from database...")
-        devices = await self.device_service.get_all()
-        for device in devices:
-            await self.add(device)
-        logger.info(
-            f"Initialized {len(self.devices)} devices"
+        self.driver_factory = (
+            driver_factory
         )
 
-    # async def add(self, device):
-    #     driver = DriverFactory.create(device)
-    #     await driver.connect()
-    #     self.devices[device.id] = driver
+        self.devices: dict[
+            str,
+            RuntimeDevice
+        ] = {}
 
-    # async def remove(self, device_id):
-    #     driver = self.devices.get(device_id)
-    #     if driver:
-    #         await driver.disconnect()
-    #         del self.devices[device_id]
+    async def initialize(
+        self,
+        devices,
+    ):
 
-    # def get(self, device_id):
-    #     return self.devices.get(device_id)
+        logger.info(
+            "Initializing %d devices",
+            len(devices),
+        )
 
-    async def shutdown(self):
-        for runtime in self.devices.values():
-            if runtime.polling_task:
-                runtime.polling_task.cancel()
-            await runtime.driver.disconnect()
-        self.devices.clear()
+        for device in devices:
 
-    async def add(self, device):
-        from app.gateway.runtime_function import driver_factory
-        driver = await driver_factory.create(device)
-        runtime = RuntimeBuilder.build(device, driver)
+            if (
+                device.device_type_enum.name
+                != "Device"
+            ):
+                continue
+
+            if not device.auto_start:
+                continue
+
+            try:
+
+                await self.start(
+                    device
+                )
+
+            except Exception as ex:
+
+                logger.exception(
+                    "Failed to start device %s: %s",
+                    device.device_name,
+                    ex,
+                )
+
+        logger.info(
+            "Initialized %d runtime devices",
+            len(self.devices),
+        )
+
+    async def start(
+        self,
+        device,
+    ) -> RuntimeDevice:
+
+        device_id = str(device.id)
+
+        existing = self.devices.get(
+            device_id
+        )
+
+        if existing is not None:
+
+            if existing.connected:
+                return existing
+
+            await self.remove(
+                device_id
+            )
+
+        driver = await (
+            self.driver_factory.create(
+                device
+            )
+        )
+
+        runtime = RuntimeBuilder.build(
+            device,
+            driver,
+        )
+
         await driver.connect()
-        runtime.connected = True
-        worker = DeviceWorker(runtime, self.bus)
-        runtime.polling_task = asyncio.create_task(worker.start())
-        self.devices[device.id] = runtime
 
-    def get(self, id):
-        return self.devices.get(id)
-    
-    async def remove(self, device_id):
+        runtime.connected = True
+        runtime.polling = True
+
+        worker = DeviceWorker(
+            runtime,
+            self.bus,
+        )
+
+        runtime.polling_task = (
+            asyncio.create_task(
+                worker.start()
+            )
+        )
+
+        self.devices[
+            device_id
+        ] = runtime
+
+        logger.info(
+            "Device started: %s",
+            device.device_name,
+        )
+
+        return runtime
+
+    async def stop(
+        self,
+        device_id,
+    ) -> bool:
+
+        runtime = self.devices.get(
+            str(device_id)
+        )
+
+        if runtime is None:
+            return False
+
+        runtime.polling = False
+
+        if runtime.polling_task:
+
+            runtime.polling_task.cancel()
+
+            try:
+                await runtime.polling_task
+
+            except asyncio.CancelledError:
+                pass
+
+            runtime.polling_task = None
+
+        if runtime.driver.connected:
+
+            await runtime.driver.disconnect()
+
+        runtime.connected = False
+
+        logger.info(
+            "Device stopped: %s",
+            runtime.device.device_name,
+        )
+
+        return True
+
+    async def restart(
+        self,
+        device,
+    ) -> RuntimeDevice:
+
+        await self.remove(
+            str(device.id)
+        )
+
+        return await self.start(
+            device
+        )
+
+    async def remove(
+        self,
+        device_id,
+    ) -> bool:
+
+        device_id = str(device_id)
+
         runtime = self.devices.pop(
             device_id,
             None,
         )
+
         if runtime is None:
-            return
+            return False
+
+        runtime.polling = False
+
         if runtime.polling_task:
+
             runtime.polling_task.cancel()
-        await runtime.driver.disconnect()
+
+            try:
+                await runtime.polling_task
+
+            except asyncio.CancelledError:
+                pass
+
+        try:
+
+            await runtime.driver.disconnect()
+
+        except Exception:
+
+            logger.exception(
+                "Failed to disconnect device %s",
+                device_id,
+            )
+
+        runtime.connected = False
+
+        logger.info(
+            "Device removed from runtime: %s",
+            device_id,
+        )
+
+        return True
+
+    async def shutdown(self):
+
+        for device_id in list(
+            self.devices.keys()
+        ):
+
+            await self.remove(
+                device_id
+            )
+
+        self.devices.clear()
+
+    def get(
+        self,
+        device_id,
+    ):
+
+        return self.devices.get(
+            str(device_id)
+        )

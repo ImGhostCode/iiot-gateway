@@ -25,6 +25,11 @@ from app.repositories.plugin_repository import (
     PluginRepository,
 )
 
+from app.repositories.device_config_repository import (
+    DeviceConfigRepository,
+)
+
+
 from app.schemas.device_dto import (
     DeviceCreate,
     DeviceUpdate,
@@ -42,6 +47,7 @@ class DeviceService:
         repository: DeviceRepository,
         plugin_repository: PluginRepository,
         plugin_manager: PluginManager,
+        config_repository: DeviceConfigRepository | None = None,
     ):
 
         self.repository = repository
@@ -49,6 +55,8 @@ class DeviceService:
         self.plugin_repository = (
             plugin_repository
         )
+
+        self.config_repository = config_repository
 
         self.plugin_manager = (
             plugin_manager

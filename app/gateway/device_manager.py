@@ -44,8 +44,7 @@ class DeviceManager:
     ):
 
         logger.info(
-            "Initializing %d devices",
-            len(devices),
+            f"Initializing {len(devices)} devices"
         )
 
         for device in devices:
@@ -68,14 +67,11 @@ class DeviceManager:
             except Exception as ex:
 
                 logger.exception(
-                    "Failed to start device %s: %s",
-                    device.device_name,
-                    ex,
+                    f"Failed to start device {device.device_name}: {ex}"
                 )
 
         logger.info(
-            "Initialized %d runtime devices",
-            len(self.devices),
+            f"Initialized {len(self.devices)} runtime devices"
         )
 
     async def start(
@@ -130,8 +126,7 @@ class DeviceManager:
         ] = runtime
 
         logger.info(
-            "Device started: %s",
-            device.device_name,
+            f"Device started: {device.device_name}"
         )
 
         return runtime
@@ -169,8 +164,7 @@ class DeviceManager:
         runtime.connected = False
 
         logger.info(
-            "Device stopped: %s",
-            runtime.device.device_name,
+            f"Device stopped: {runtime.device.device_name}"
         )
 
         return True
@@ -222,15 +216,13 @@ class DeviceManager:
         except Exception:
 
             logger.exception(
-                "Failed to disconnect device %s",
-                device_id,
+                f"Failed to disconnect device {device_id}"
             )
 
         runtime.connected = False
 
         logger.info(
-            "Device removed from runtime: %s",
-            device_id,
+            "Device removed from runtime: {device_id}"
         )
 
         return True

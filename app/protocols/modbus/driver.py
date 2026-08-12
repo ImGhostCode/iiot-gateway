@@ -1,103 +1,94 @@
+import json
+
 from app.gateway.runtime.raw_value import RawValue
 from app.plugins.device_context import DeviceContext
 from app.plugins.base_driver import BaseDriver
+from app.plugins.config import ConfigParameter
 
-from app.protocols.modbus.client import (
-    ModbusClient,
-)
+from app.db.models.base import DataSide
 
-from app.protocols.modbus.decoder import (
-    ModbusDecoder,
-)
+from app.protocols.modbus.client import ModbusClient
+from app.protocols.modbus.decoder import ModbusDecoder
 
 
 class ModbusDriver(BaseDriver):
 
-    def __init__(
-        self,
-        device,
-    ):
+    @classmethod
+    def config_schema(cls):
 
-        super().__init__(device)
+        return [
 
-        self.client = None
+            ConfigParameter(
+                name="IP",
+                description="Modbus TCP server IP address",
+                default="127.0.0.1",
+            ),
+
+            ConfigParameter(
+                name="Port",
+                description="Modbus TCP server port",
+                default="502",
+            ),
+
+            ConfigParameter(
+                name="SlaveId",
+                description="Modbus slave ID",
+                default="1",
+            ),
+
+        ]
 
     async def initialize(self):
 
-        context = DeviceContext(
-            self.device
-        )
-
-        host = context.require("IP")
-
-        port = int(
-            context.get(
-                "Port",
-                502,
-            )
-        )
-
-        slave = int(
-            context.get(
-                "SlaveId",
-                1,
-            )
-        )
+        ctx = DeviceContext(self.device)
 
         self.client = ModbusClient(
-            host=host,
-            port=port,
-            slave=slave,
+
+            host=ctx.require("IP"),
+
+            port=int(
+                ctx.get("Port", 502)
+            ),
+
+            slave=int(
+                ctx.get("SlaveId", 1)
+            ),
+
         )
 
     async def connect(self):
 
-        if self.client is None:
-            await self.initialize()
-
-        self.connected = (
-            await self.client.connect()
-        )
-
-        return self.connected
+        self.connected = await self.client.connect()
 
     async def disconnect(self):
 
-        if self.client is not None:
+        if self.connected:
 
             await self.client.close()
 
         self.connected = False
 
-    async def read(self):
-
-        if not self.connected:
-            return []
+    async def read(self) -> list[RawValue]:
 
         values = []
 
-        for variable in (
-            self.device.device_variables
-        ):
+        for variable in self.device.device_variables:
 
-            response = await self.client.read(
-                variable
-            )
+            response = await self.client.read(variable)
 
             if response.isError():
+
                 continue
 
-            decoded = (
-                ModbusDecoder.decode(
-                    registers=response.registers,
-                    data_type=variable.data_type,
-                )
+            decoded = ModbusDecoder.decode(
+                registers=response.registers,
+                data_type=variable.data_type,
             )
 
             values.append(
                 RawValue(
-                    variable_id=variable.id,
-                    value=decoded,
+                    variable.id,
+                    decoded,
                 )
             )
 
@@ -109,6 +100,4 @@ class ModbusDriver(BaseDriver):
         value,
     ):
 
-        raise NotImplementedError(
-            "Modbus write is not implemented"
-        )
+        raise NotImplementedError

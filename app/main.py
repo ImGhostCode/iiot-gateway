@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.core.config import settings
 from app.gateway.runtime_function import lifespan
 from app.api.v1.devices import router as device_router_v1
+from app.api.v1.device_configs import router as device_config_router_v1
 from app.api.v1.system_conifg import router as system_config_router_v1
 from app.api.v1.health import router as health_router_v1
 from app.api.v1.runtime import router as runtime_router_v1
@@ -25,6 +26,12 @@ app.include_router(
     device_router_v1,
     prefix="/api/v1/devices",
     tags=["Devices"],
+)
+
+app.include_router(
+    device_config_router_v1,
+    prefix="/api/v1/devices",
+    tags=["Device Configs"],
 )
 
 app.include_router(

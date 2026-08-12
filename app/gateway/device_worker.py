@@ -27,7 +27,6 @@ class DeviceWorker:
         self.running = True
 
         while self.running:
-
             try:
 
                 if not (

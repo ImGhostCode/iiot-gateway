@@ -5,6 +5,7 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
+    Request
 )
 
 from sqlalchemy.ext.asyncio import (
@@ -47,6 +48,9 @@ from app.services.device_service import (
     DeviceService,
 )
 
+from app.services.device_config_service import DeviceConfigService
+from app.repositories.device_config_repository import DeviceConfigRepository
+from app.db.models.base import DeviceTypeEnum
 
 router = APIRouter(
     tags=["Devices"]
@@ -139,16 +143,40 @@ async def get_device(
 )
 async def create_device(
     dto: DeviceCreate,
-
-    service: DeviceService = Depends(
-        get_service
-    ),
-
+    service: DeviceService = Depends(get_service),
+    db: AsyncSession = Depends(get_db),
+    request: Request = None,
+    manager: DeviceManager = Depends(get_device_manager),
+    user=Depends(require_operator),
 ):
 
-    return await service.create(
-        dto
+    device = await service.create(dto)
+
+    device = await service.get_by_id(
+        str(device.id)
     )
+
+    if (
+        device.device_type_enum == DeviceTypeEnum.Device
+        and device.driver_id is not None
+    ):
+
+        plugin_manager = request.app.state.plugin_manager
+
+        driver_cls = plugin_manager.get_driver(
+            device.driver.driver_name
+        )
+
+        config_service = DeviceConfigService(
+            DeviceConfigRepository(db)
+        )
+
+        await config_service.ensure_defaults(
+            device,
+            driver_cls,
+        )
+
+    return device
 
 
 @router.put(

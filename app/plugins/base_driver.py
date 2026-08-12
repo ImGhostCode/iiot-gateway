@@ -11,6 +11,15 @@ class BaseDriver(ABC):
         self.runtime = None
         self.connected = False
 
+    @classmethod
+    def config_schema(cls):
+        """
+        Return configuration definitions required
+        by this driver.
+        """
+
+        return []
+
     @abstractmethod
     async def connect(self):
         """Connect to device."""

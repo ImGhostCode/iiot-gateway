@@ -1,3 +1,5 @@
+from app.db.models.base import DataTypeEnum
+
 class DataConverter:
 
     @staticmethod
@@ -5,16 +7,16 @@ class DataConverter:
 
         match variable.data_type:
 
-            case "Bool":
+            case DataTypeEnum.Bool:
                 return bool(value)
 
-            case "Float":
+            case DataTypeEnum.Float:
                 return float(value)
 
-            case "Int16":
+            case DataTypeEnum.Int16:
                 return int(value)
 
-            case "UInt16":
+            case DataTypeEnum.Uint16:
                 return int(value)
 
             case _:

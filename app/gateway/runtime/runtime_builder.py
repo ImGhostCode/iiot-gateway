@@ -28,6 +28,7 @@ class RuntimeBuilder:
             ] = RuntimeVariable(
                 id=str(variable.id),
                 name=variable.name,
+                data_type=variable.data_type
             )
 
         driver.runtime = runtime

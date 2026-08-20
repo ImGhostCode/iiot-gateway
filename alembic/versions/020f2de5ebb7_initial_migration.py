@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 4f9d89285685
+Revision ID: 020f2de5ebb7
 Revises: 
-Create Date: 2026-08-06 13:17:47.881713
+Create Date: 2026-08-18 11:34:17.155313
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '4f9d89285685'
+revision: str = '020f2de5ebb7'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -108,18 +108,18 @@ def upgrade() -> None:
     op.create_index(op.f('ix_device_configs_value'), 'device_configs', ['value'], unique=False)
     op.create_table('device_variables',
     sa.Column('name', sa.String(), nullable=False, comment='Variable name'),
-    sa.Column('description', sa.String(), nullable=False, comment='Description'),
+    sa.Column('description', sa.String(), nullable=True, comment='Description'),
     sa.Column('method', sa.String(), nullable=False, comment='Method'),
     sa.Column('device_address', sa.String(), nullable=False, comment='Address'),
-    sa.Column('data_type', sa.Enum('Default', name='datatypeenum'), nullable=False, comment='Data types'),
+    sa.Column('data_type', sa.Enum('Bit', 'Bool', 'UByte', 'Byte', 'Uint16', 'Int16', 'Bcd16', 'Uint32', 'Int32', 'Float', 'Bcd32', 'Uint64', 'Int64', 'Double', 'AsciiString', 'Utf8String', 'DateTime', 'TimeStampMs', 'TimeStampS', 'Any', 'Custome1', 'Custome2', 'Custome3', 'Custome4', 'Custome5', 'Gb2312String', 'Default', name='datatypeenum'), nullable=False, comment='Data types'),
     sa.Column('is_trigger', sa.Boolean(), nullable=False, comment='Trigger'),
-    sa.Column('endian_type', sa.Enum('Default', name='endianenum'), nullable=False, comment='Big-endian'),
-    sa.Column('expressions', sa.String(), nullable=False, comment='Expression'),
+    sa.Column('endian_type', sa.Enum('None_', 'BigEndian', 'LittleEndian', 'BigEndianSwap', 'LittleEndianSwap', name='endianenum'), nullable=False, comment='Endian'),
+    sa.Column('expressions', sa.String(), nullable=True, comment='Expression'),
     sa.Column('is_upload', sa.Boolean(), nullable=False, comment='Upload'),
-    sa.Column('protect_type', sa.Enum('Default', name='protecttypeenum'), nullable=False, comment='Permissions'),
+    sa.Column('protect_type', sa.Enum('ReadOnly', 'ReadWrite', 'WriteOnly', name='protecttypeenum'), nullable=False, comment='Permissions'),
     sa.Column('index', sa.Integer(), nullable=False, comment='Sort'),
-    sa.Column('alias', sa.String(), nullable=False, comment='Alias'),
-    sa.Column('device_id', sa.Uuid(), nullable=True, comment='Equipment'),
+    sa.Column('alias', sa.String(), nullable=True, comment='Alias'),
+    sa.Column('device_id', sa.Uuid(), nullable=True, comment='Device'),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['device_id'], ['devices.id'], ),
     sa.PrimaryKeyConstraint('id')

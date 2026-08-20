@@ -40,13 +40,61 @@ class DataSide(int, Enum):
 
 # Placeholders for enums referenced but not fully defined in the provided code
 class ProtectTypeEnum(str, Enum):
-    Default = "Default"
+    ReadOnly = "ReadOnly"
+    ReadWrite = "ReadWrite"
+    WriteOnly = "WriteOnly"
+
 
 class DataTypeEnum(str, Enum):
+    Bit = "Bit"
+    Bool = "Bool"
+    UByte = "UByte"
+    Byte = "Byte"
+    Uint16 = "Uint16"
+    Int16 = "Int16"
+    Bcd16 = "Bcd16"
+    Uint32 = "Uint32"
+    Int32 = "Int32"
+    Float = "Float"
+    Bcd32 = "Bcd32"
+    Uint64 = "Uint64"
+    Int64 = "Int64"
+    Double = "Double"
+    AsciiString = "AsciiString"
+    Utf8String = "Utf8String"
+    DateTime = "DateTime"
+    TimeStampMs = "TimeStampMs"
+    TimeStampS = "TimeStampS"
+    Any = "Any"
+    Custome1 = "Custome1"
+    Custome2 = "Custome2"
+    Custome3 = "Custome3"
+    Custome4 = "Custome4"
+    Custome5 = "Custome5"
+    Gb2312String = "Gb2312String"
     Default = "Default"
 
+
 class EndianEnum(str, Enum):
-    Default = "Default"
+    None_ = "None"
+    BigEndian = "BigEndian"
+    LittleEndian = "LittleEndian"
+    BigEndianSwap = "BigEndianSwap"
+    LittleEndianSwap = "LittleEndianSwap"
+
+
+class VaribaleStatusTypeEnum(str, Enum):
+    Good = "Good"
+    AddressError = "AddressError"
+    MethodError = "MethodError"
+    ExpressionError = "ExpressionError"
+    Bad = "Bad"
+    UnKnow = "UnKnow"
+    Custome1 = "Custome1"
+    Custome2 = "Custome2"
+    Custome3 = "Custome3"
+    Custome4 = "Custome4"
+    Custome5 = "Custome5"
 
 class GenderEnum(str, Enum):
     Male = "Male"

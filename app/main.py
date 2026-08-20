@@ -9,7 +9,7 @@ from app.api.v1.health import router as health_router_v1
 from app.api.v1.runtime import router as runtime_router_v1
 from app.api.v1.plugins import router as plugin_router_v1
 from app.api.v1.tags import router as tag_router_v1
-from app.api.v1.variables import router as variable_router_v1
+from app.api.v1.device_variable import router as variable_router_v1
 from app.api.v1.users import router as user_router_v1
 from app.api.v1.auth import router as auth_router_v1
 
@@ -55,7 +55,7 @@ app.include_router(
 app.include_router(
     variable_router_v1,
     prefix="/api/v1/variables",
-    tags=["Variables"],
+    tags=["Device Variables"],
 )
 
 app.include_router(

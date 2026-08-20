@@ -8,6 +8,10 @@ class RuntimeVariable:
 
     name: str
 
+    data_type: str
+
+    expression: str = None
+
     value: object = None
 
     quality: str = "Unknown"

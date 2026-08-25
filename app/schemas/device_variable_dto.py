@@ -75,5 +75,7 @@ class DeviceVariableRuntimeResponse(BaseModel):
     device_id: UUID
     name: str
     value: Any = None
+    cooked_value: Any = None
+    message: str | None = None
     quality: str
     timestamp: Optional[datetime] = None

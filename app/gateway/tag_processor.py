@@ -38,48 +38,77 @@ class TagProcessor:
             if variable is None:
                 continue
 
-            old_value = variable.value
+            old_value = variable.cooked_value
 
-            converted = (
-                DataConverter.convert(
+            try:
+
+                # -------------------------------------------------
+                # 1. Raw value from driver
+                # -------------------------------------------------
+
+                raw_value = raw.value
+
+                # -------------------------------------------------
+                # 2. Convert raw value according to variable config
+                # -------------------------------------------------
+
+                converted = DataConverter.convert(
                     variable,
-                    raw.value,
+                    raw_value,
                 )
-            )
 
-            converted = (
-                ExpressionEngine.evaluate(
+                # -------------------------------------------------
+                # 3. Apply expression
+                # -------------------------------------------------
+
+                cooked_value = ExpressionEngine.evaluate(
                     variable,
                     converted,
                 )
-            )
 
-            variable.value = converted
+                # -------------------------------------------------
+                # 4. Update runtime state
+                # -------------------------------------------------
 
-            variable.quality = "Good"
+                variable.value = raw_value
 
-            variable.timestamp = (
-                datetime.now(timezone.utc)
-            )
+                variable.cooked_value = cooked_value
 
-            if old_value != variable.value:
+                variable.message = None
 
-                await self.bus.publish(
-                    TagChangedEvent(
+                variable.quality = "Good"
 
-                        device_id=
-                            runtime.device.id,
+                variable.timestamp = (
+                    datetime.now(timezone.utc)
+                )
 
-                        variable_id=
-                            variable.id,
+                # -------------------------------------------------
+                # 5. Publish event when cooked value changes
+                # -------------------------------------------------
 
-                        old_value=
-                            old_value,
+                if old_value != variable.cooked_value:
 
-                        new_value=
-                            variable.value,
+                    await self.bus.publish(
+                        TagChangedEvent(
 
-                        timestamp=
-                            variable.timestamp,
+                            device_id=runtime.device.id,
+
+                            variable_id=variable.id,
+
+                            old_value=old_value,
+
+                            new_value=variable.cooked_value,
+
+                            timestamp=variable.timestamp,
+                        )
                     )
+
+            except Exception as ex:
+
+                variable.message = str(ex)
+
+                variable.quality = "Bad"
+
+                variable.timestamp = (
+                    datetime.now(timezone.utc)
                 )

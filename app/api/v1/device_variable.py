@@ -61,21 +61,77 @@ async def _restart_device_runtime(
         fresh_device
     )
 
+def merge_runtime_state(
+    variable,
+    manager: DeviceManager,
+):
+    runtime = manager.get(variable.device_id)
+
+    if runtime is None:
+        return variable
+
+    runtime_variable = runtime.variables.get(
+        str(variable.id)
+    )
+
+    if runtime_variable is None:
+        return variable
+
+    variable.value = runtime_variable.value
+
+    variable.cooked_value = (
+        runtime_variable.cooked_value
+    )
+
+    variable.message = (
+        runtime_variable.message
+    )
+
+    variable.quality = (
+        runtime_variable.quality
+    )
+
+    variable.timestamp = (
+        runtime_variable.timestamp
+    )
+
+    return variable
+
 @router.get("/", response_model=list[DeviceVariableResponse])
 async def get_variables(
     service: DeviceVariableService = Depends(get_service),
+    manager: DeviceManager = Depends(get_device_manager),
     user=Depends(get_current_user),
 ):
-    return await service.get_all()
+    variables = await service.get_all()
+
+    for variable in variables:
+        merge_runtime_state(
+            variable,
+            manager,
+        )
+
+    return variables
 
 
 @router.get("/{device_id}", response_model=list[DeviceVariableResponse])
 async def get_device_variables(
     device_id: UUID,
     service: DeviceVariableService = Depends(get_service),
+    manager: DeviceManager = Depends(get_device_manager),
     user=Depends(get_current_user),
 ):
-    return await service.get_by_device(device_id)
+    variables = await service.get_by_device(
+        device_id
+    )
+
+    for variable in variables:
+        merge_runtime_state(
+            variable,
+            manager,
+        )
+
+    return variables
 
 
 @router.get("/{device_id}/{variable_id}", response_model=DeviceVariableResponse)
@@ -83,11 +139,25 @@ async def get_device_variable(
     device_id: UUID,
     variable_id: UUID,
     service: DeviceVariableService = Depends(get_service),
+    manager: DeviceManager = Depends(get_device_manager),
     user=Depends(get_current_user),
 ):
-    variable = await service.get_by_id(device_id, variable_id)
+    variable = await service.get_by_id(
+        device_id,
+        variable_id,
+    )
+
     if variable is None:
-        raise HTTPException(status_code=404, detail="Device variable not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Device variable not found",
+        )
+
+    merge_runtime_state(
+        variable,
+        manager,
+    )
+
     return variable
 
 
@@ -197,6 +267,8 @@ async def get_runtime_variable(
         device_id=device_id,
         name=variable.name,
         value=variable.value,
+        cooked_value=variable.cooked_value,
+        message=variable.message,
         quality=variable.quality,
         timestamp=variable.timestamp,
     )

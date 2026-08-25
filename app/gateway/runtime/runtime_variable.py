@@ -12,7 +12,13 @@ class RuntimeVariable:
 
     expression: str = None
 
+    # Raw value received directly from driver
     value: object = None
+
+    # Value after converter / expression
+    cooked_value: object = None
+
+    message: str | None = None
 
     quality: str = "Unknown"
 
